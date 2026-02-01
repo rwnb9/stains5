@@ -1,0 +1,6 @@
+dataset/
+stain_model/
+*.h5
+simple_image_classifier.py
+__pycache__/
+*.pyc
