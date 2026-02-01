@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Towel Stain Detector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+<body>
+  <h1>Is This Towel Clean or Stained?</h1>
+  <input type="file" onchange="predict(event)">
+  <br><br>
+  <img id="img" width="300" style="display:none;">
+  <h2 id="result"></h2>
+  <p id="advice"></p>
+
+  <script>
+    const labels = ['Clean', 'Stained'];
+    const remedies = {
+      'Clean': '✅ Your towel is clean!',
+      'Stained': '🧼 Tip: Soak in detergent or apply stain remover before washing.'
+    };
+
+    let model;
+
+    async function loadModel() {
+      try {
+        model = await tf.loadLayersModel('tfjs_model/model.json');
+        console.log("Model loaded successfully.");
+      } catch (err) {
+        console.error("Error loading model:", err);
+      }
+    }
+
+    loadModel();
+
+    async function predict(event) {
+      if (!model) {
+        alert("Model not loaded yet. Please wait...");
+        return;
+      }
+
+      const img = document.getElementById('img');
+      img.src = URL.createObjectURL(event.target.files[0]);
+      img.style.display = 'block';
+
+      img.onload = async () => {
+        const tensor = tf.browser.fromPixels(img)
+          .resizeNearestNeighbor([224, 224])
+          .toFloat()
+          .div(tf.scalar(255))
+          .expandDims();
+
+        const prediction = model.predict(tensor);
+        const score = prediction.dataSync()[0];
+        const classIndex = score > 0.5 ? 1 : 0;
+        const label = labels[classIndex];
+
+        document.getElementById('result').innerText = `Detected: ${label}`;
+        document.getElementById('advice').innerText = remedies[label];
+      };
+    }
+  </script>
+</body>
+</html>
